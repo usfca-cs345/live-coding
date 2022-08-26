@@ -1,0 +1,50 @@
+// BOARD WORK FROM LECTURE 2
+
+length [] = 0
+length (first :: rest) = 1 + length rest
+
+x = y :: z
+
+y :: z = x
+
+a, b = 3, 5
+
+1 :: (2 :: (3 :: []))
+
+
+match expr with
+| Add (lhs, rhs) -> ...
+| Num n -> ...
+
+{
+T string_of_strings = ...;
+T add_brackets = ...;
+...
+}
+
+ideas for list iteration:
+
+- accumulation
+- repeating a function
+- filtering
+
+only_odd (1 :: (2 :: (3 :: (... :: (1000000 :: [])))))
+= 1 :: | only_odd (2 :: (3 :: (... :: (1000000 :: [])))) 
+= 1 :: | only_odd (3 :: (... :: (1000000 :: [])))
+= 1 :: | 3 :: | only_odd (... :: (1000000 :: [])))
+
+(1 :: (3 :: [])) // only_odd
+3 :: (1 :: [])   // only_odd'
+
+sum l = {
+acc = 0
+loop {
+  if l = [] then return acc
+  acc = acc + head(l)
+  l = tail(l)
+}
+}
+
+sum l acc =
+ if l = [] then acc
+ else sum (tail l) (acc + head l)
