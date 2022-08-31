@@ -134,7 +134,7 @@ let rec filter pred xs = match xs with
   | _ :: xs -> filter pred xs
 
 (* Now, we can re-define only_odd: *)
-let rec only_odd'' xs = filter (fun x -> x mod 2 = 1) xs
+let rec only_odd'' xs = filter (fun y -> y mod 2 = 1) xs
 
 (* "Folds" given list using the given binary operation.
 
@@ -142,20 +142,59 @@ let rec only_odd'' xs = filter (fun x -> x mod 2 = 1) xs
 
    Examples:
    fold (+) 0 [1; 2; 3; 4] = ((((0 + 1) + 2) + 3) + 4) = 10
+   fold (^) "" ["a"; "b"; "c"] = (("" ^ "a") ^ "b") ^ "c" = "abc"
+   fold (fun len x -> len + 1) 0 [1; 2; 3; 4] = (((0 + 1) + 1) + 1) + 1 = 4
 
-   fold f 0 [] = 0
+   fold f a [] = a
    fold f a [b] = (f a b)
    fold f a [b; c] = (f (f a b) c)
  *)
-let rec fold f start xs = todo () ;;
+let rec fold
+    (f : 'acc -> 'elem -> 'acc) (start : 'acc) (xs : 'elem list)
+    : 'acc
+  = match xs with
+  | [] -> start
+  | head :: tail -> fold f (f start head) tail
 
 (* Now, we can re-define length, sum, and string_of_list *)
-let rec length''' xs = todo () ;;
-let rec sum' xs = todo () ;;
-let rec string_of_list' xs = todo () ;;
+let rec length''' = fold (fun length_so_far x -> length_so_far + 1) 0
+let rec sum' = fold (+) 0
+;;
+(*
+   sum' [1;4] = fold (+) 0 [1;4] = ((0 + 1) + 4) = 5
+ *)
+(* [1; 2; 3] -> ["1"; "2"; "3"] -> "1; 2; 3; " -> "[1; 2; 3; ]" *)
+let string_of_list' nums = (
+  (* [3; 2; 1] -> "1" ^ "; " ^ ("2" ^ "; " ^ ("3" ^ "; " ^ "")) *)
+  let string_of_strings strs = (
+    fold
+      (fun stuff_so_far curr_elem -> curr_elem ^ "; " ^ stuff_so_far)
+      ""
+      strs
+  )
+  and add_brackets s = "[" ^ s ^ "]"
+  in 
+  (
+    nums |> stringify |> List.rev |> string_of_strings |> add_brackets
+  )
+)
 
-(* Fold is powerful enough to implement map and filter *)
-let map'' f xs = todo () ;;
+(* (1 + 2) + 3 = 1 + (2 + 3) *)
+
+(* Fold is powerful enough to implement map and filter
+
+   map f [] = []
+   map f h :: t = f h :: map f t
+
+   (on a reversed list)
+
+   [x3; x2; x1] -> f x1 :: (f x2 :: (f x3 :: []))
+
+   [] x3 ↦ f x3 :: []
+   ... x1 ↦ f x1 :: ...
+*)
+let map'' f xs =
+  fold (fun applied_values head -> f head :: applied_values) [] (List.rev xs)
 let filter' f xs = todo () ;;
 
 (* Optionals *)
@@ -163,16 +202,31 @@ let filter' f xs = todo () ;;
 (* Finds the largest element in the list.
 
    Q: What should this function return if the list is empty?
+
+   max [x1; ... ; xn] = max2(x1, max2(x2, ... max2(x(n-1), xn)))
  *)
-let rec max xs = todo () ;;
+let rec max (xs : int list) : int option =
+  let max2 a b = if a > b then a else b
+  in
+  match xs with
+  | [] -> None
+  | h :: t -> (
+      match max t with
+      | None -> Some h
+      | Some max_rest -> Some (max2 h max_rest)
+    )
 
 (* Optionals:
 
-   'a option = Some 'a | None
+   'a option = (Some 'a) | None
+
+   'a list = [] | ('a :: ('a list))
 
    Option.get: unsafely get the value
  *)
 
 (* Extracts the integer inside and optional, or returns zero if there is no
    int. *)
-let or_zero n = todo () ;;
+let or_zero n = match n with
+  | Some value -> value
+  | None -> 0

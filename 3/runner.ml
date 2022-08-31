@@ -1,3 +1,5 @@
+let todo _ = failwith "todo"
+
 (* Records *)
 
 type command = {
@@ -26,12 +28,31 @@ let stargate = todo
 
 type 'a with_dir = 'a * string
 
+(* java: class WithDir<A> { ... } *)
+
+type vector2d = float * float
+
 (* Variants *)
 
-type weekday = TODO
+type weekday = Monday
+             | Tuesday
+             | Wednesday
+             | Thursday
+             | Friday
+             | Saturday
+             | Sunday
+
+let lecture_days = [Tuesday; Thursday] ;;
 
 (** Returns the next day of the week. *)
-let next_day day = todo ()
+let next_day day = match day with
+  | Monday   -> Tuesday
+  | Tuesday  -> Wednesday
+  | Wednesday-> Thursday
+  | Thursday -> Friday
+  | Friday   -> Saturday
+  | Saturday -> Sunday
+  | Sunday   -> Monday
 
 type location = Local
               | Remote of machine
