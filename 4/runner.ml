@@ -18,7 +18,9 @@ let ls_detail = { program = "ls"; arguments = ["-l"; "-h"] }
  *)
 let string_of_command cmd =
   let quote s = "'" ^ s ^ "'" in
-  todo ()
+  List.fold_left (fun cmd_line arg -> cmd_line ^ " " ^ quote arg)
+    (quote cmd.program)
+    cmd.arguments
 
 type machine = {
     name : string;
@@ -26,11 +28,15 @@ type machine = {
     user : string;
 }
 
-let stargate = todo
+let stargate = {
+  name = "stargate";
+  address = "stargate.cs.usfca.edu";
+  user = "memre";
+}
 
 type 'a with_dir = 'a * string
 
-(* java: class WithDir<A> { ... } *)
+(* java: class WithDir<A> { A first; String second; } *)
 
 type vector2d = float * float
 
@@ -56,15 +62,20 @@ let next_day day = match day with
   | Saturday -> Sunday
   | Sunday   -> Monday
 
+type gatewayed_machine = { gateway : machine; target : machine }
+
 type location = Local
               | Remote of machine
+(* | RemoteWithGateway of gatewayed_machine *)
 
 (* Prefix for a location.
 
    For local locations, it is empty.
    For remote locations, it is <user>@<address>:
  *)
-let location_prefix = todo
+let location_prefix loc = match loc with
+  | Local -> ""
+  | Remote { user; address } -> user ^ "@" ^ address ^ ":" 
 
 type file = {
     name : string;
@@ -75,13 +86,14 @@ type file = {
 
     That is <location prefix><directory>/<file>
  *)
-let file_path { name; location = (location, dir) } = todo ()
+let file_path { name = name; location = (location, dir) } =
+    (location_prefix location) ^ dir ^ "/" ^ name
 
 (** Returns the name of the given file *)
-let file_name file = todo ()
+let file_name (f : file) = f.name
 
 (** Returns the name of the given machine *)
-let machine_name machine = todo ()
+let machine_name (m : machine) = m.name
 
 (* todo: add copy *)
 type operation = Fetch of string * file
@@ -123,4 +135,8 @@ let run command : bool = Sys.command (string_of_command command) = 0
     - what data do I need to keep track of?
     - how do I combine it with the result of running the current command.
 *)
-let run' commands = todo ()
+let run' commands =
+  List.fold_left
+    (fun success command -> if success then run command else success)
+    true
+    commands
