@@ -34,11 +34,13 @@ let stargate = {
   user = "memre";
 }
 
+(* This is a type alias, so that we don't have to write float * float every time. *)
+type vector2d = float * float
+
+(* This is a generic type that holds a pair *)
 type 'a with_dir = 'a * string
 
 (* java: class WithDir<A> { A first; String second; } *)
-
-type vector2d = float * float
 
 (* Variants *)
 
@@ -66,12 +68,15 @@ type gatewayed_machine = { gateway : machine; target : machine }
 
 type location = Local
               | Remote of machine
-(* | RemoteWithGateway of gatewayed_machine *)
+(* We could add more cases like:
+   | RemoteWithGateway of gatewayed_machine *)
 
 (* Prefix for a location.
 
    For local locations, it is empty.
    For remote locations, it is <user>@<address>:
+
+   Notice that we can pattern match on records.
  *)
 let location_prefix loc = match loc with
   | Local -> ""
@@ -85,9 +90,16 @@ type file = {
 (** Returns the file path as a string.
 
     That is <location prefix><directory>/<file>
- *)
+
+    NOTE: Records have a single pattern to match, so we can match agaisnt them
+    in a let binding.
+
+*)
 let file_path { name = name; location = (location, dir) } =
     (location_prefix location) ^ dir ^ "/" ^ name
+
+(* These two functions need type signatures to resolve the ambiguity on whether
+   f (or m) is a file or a machine. *)
 
 (** Returns the name of the given file *)
 let file_name (f : file) = f.name
@@ -95,15 +107,27 @@ let file_name (f : file) = f.name
 (** Returns the name of the given machine *)
 let machine_name (m : machine) = m.name
 
-(* todo: add copy *)
-type operation = Fetch of string * file
-               | Open of file
+(** High-level operations *)
+type operation =
+    Fetch of string * file (* fetching a url and saving it to a file *)
+  | Open of file (* opening a file *)
 ;;
 
-(** Generates the command to perform the given operation *)
+(** Generates the command to perform the given operation.
+
+    This is like a compiler, it converts a high-level representation (an
+    abstract operation like fetching a file) to another representation to enable
+    running it (a shell command).
+
+    The specific commands we call are not as important.
+*)
 let gen_command operation = match operation with
-  | Open { name = _; location = (Remote _, _) } -> failwith "opening remote locations is not supported"
-  | Fetch (url, { name = _; location = (Remote _, _) }) -> failwith "cannot fetch to a remote file"
+  (* we can match nested patterns, here we are extracting out whether a file has
+     a remote location to cover the error cases.  *)
+  | Open { name = _; location = (Remote _, _) } ->
+    failwith "opening remote locations is not supported"
+  | Fetch (url, { name = _; location = (Remote _, _) }) ->
+    failwith "cannot fetch to a remote file"
   | Open file -> {
       program = "open"; (* on Linux, use xdg-open *)
       arguments = [file_path file]
@@ -134,6 +158,8 @@ let run command : bool = Sys.command (string_of_command command) = 0
 
     - what data do I need to keep track of?
     - how do I combine it with the result of running the current command.
+
+    See the lecture video for how the arguments to fold_left are derived.
 *)
 let run' commands =
   List.fold_left
